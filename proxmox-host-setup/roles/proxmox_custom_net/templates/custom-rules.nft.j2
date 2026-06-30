@@ -1,0 +1,5 @@
+add table bridge br_dhcpblock
+add chain bridge br_dhcpblock forward { type filter hook forward priority 0; policy accept; }
+flush chain bridge br_dhcpblock forward
+add rule bridge br_dhcpblock forward iifname "veth_trs" udp dport { 67, 68 } drop
+add rule bridge br_dhcpblock forward iifname "veth_trs_sep" udp dport { 67, 68 } drop

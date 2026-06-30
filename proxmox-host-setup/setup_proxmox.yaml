@@ -1,0 +1,7 @@
+---
+- name: Proxmox Base Configuration & Networking Setup
+  hosts: proxmox
+  gather_facts: yes
+  roles:
+    - proxmox_repos
+    - proxmox_custom_net

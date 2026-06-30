@@ -1,0 +1,46 @@
+auto lo
+iface lo inet loopback
+
+
+iface {{ pve_nic_name }} inet manual
+iface {{ pve_nic_name }}.{{ pve_vlan_trusted }} inet manual
+        vlan-raw-device {{ pve_nic_name }}
+
+iface {{ pve_nic_name }}.{{ pve_vlan_untrusted }} inet manual
+        vlan-raw-device {{ pve_nic_name }}
+
+# The main bridge connected to the trunk
+auto br_trs
+iface br_trs inet static
+        address {{ pve_trusted_ip }}
+        gateway {{ pve_trusted_gw }}
+        bridge-ports {{ pve_nic_name }}.{{ pve_vlan_trusted }} veth_trs
+        bridge-stp off
+        bridge-fd 0
+
+# The separated bridge for our VMs
+auto br_trs_sep
+iface br_trs_sep inet manual
+        address {{ pve_sep_ip }}
+        bridge-ports veth_trs_sep
+        bridge-stp off
+        bridge-fd 0
+
+# The VETH pair linking the bridges
+auto veth_trs_sep
+iface veth_trs_sep inet manual
+
+auto veth_trs
+iface veth_trs inet manual
+        link-type veth
+        veth-peer-name veth_trs_sep
+
+# The untrusted network bridge
+auto br_ntrs
+iface br_ntrs inet static
+        bridge-ports {{ pve_nic_name }}.{{ pve_vlan_untrusted }}
+        bridge-stp off
+        bridge-fd 0
+
+
+source /etc/network/interfaces.d/*

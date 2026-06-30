@@ -1,0 +1,11 @@
+---
+- name: Restart networking
+  ansible.builtin.systemd:
+    name: networking
+    state: restarted
+
+- name: Restart pve-firewall
+  ansible.builtin.systemd:
+    name: pve-firewall
+    state: restarted
+    daemon_reload: true

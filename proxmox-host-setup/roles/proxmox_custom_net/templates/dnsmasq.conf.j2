@@ -1,0 +1,11 @@
+interface=br_trs_sep
+interface=br_trs
+no-dhcp-interface=br_trs
+domain={{ pve_dnsmasq_domain }}
+dhcp-authoritative
+local-ttl=0
+# Issue IPs to VMs
+dhcp-range=interface:br_trs_sep,{{ pve_dnsmasq_range }}
+# Define the router and main DNS server for the VMs
+dhcp-option=option:router,{{ pve_dnsmasq_router }}
+dhcp-option=option:dns-server,{{ pve_dnsmasq_dns }}

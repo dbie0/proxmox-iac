@@ -1,0 +1,63 @@
+---
+- name: Configure Proxmox Network Interfaces
+  ansible.builtin.template:
+    src: interfaces.j2
+    dest: /etc/network/interfaces
+    mode: '0644'
+  notify: Restart networking
+
+- name: Install dnsmasq
+  ansible.builtin.apt:
+    name: dnsmasq
+    state: present
+- name: Configure dnsmasq
+  ansible.builtin.template:
+    src: dnsmasq.conf.j2
+    dest: /etc/dnsmasq.conf
+    mode: '0644'
+
+- name: Create custom nftables directory
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    mode: '0755'
+- name: Deploy custom nftables DHCP block rules
+  ansible.builtin.template:
+    src: custom-rules.nft.j2
+    dest: /etc/nftables.d/custom-rules.nft
+    mode: '0644'
+  notify: Restart pve-firewall
+
+- name: Create proxmox firewall service override directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/proxmox-firewall.service.d/
+    state: directory
+    mode: '0755'
+- name: Enable custom nftables DHCP block rules
+  ansible.builtin.copy:
+    dest: /etc/systemd/system/proxmox-firewall.service.d/override.conf
+    content: |
+      [Service]
+      ExecStartPost=/usr/sbin/nft -f /etc/nftables.d/custom-rules.nft
+    mode: '0644'
+  notify: Restart pve-firewall
+- name: Enable firewall (cluster level)
+  ansible.builtin.copy:
+    dest: /etc/pve/firewall/cluster.fw
+    content: |
+      [OPTIONS]
+      enable: 1
+  notify: Restart pve-firewall
+- name: Configure proxmox firewall
+  ansible.builtin.copy:
+    dest: /etc/pve/nodes/pve/host.fw
+    content: |
+      [OPTIONS]
+      enable: 1
+      nftables: 1
+      
+      [RULES]
+      IN ACCEPT -p udp -dport 53 -log nolog                 # allow dnsmasq to resolve incoming DNS queries 
+      OUT ACCEPT -i br_trs_sep -p udp -sport 67 -log nolog  # allow dnsmasq to accept incoming DHCP requests
+      IN ACCEPT -i br_trs_sep -p udp -dport 67 -log nolog   # allow dnsmasq to respond to incoming DHCP requests
+  notify: Restart pve-firewall
