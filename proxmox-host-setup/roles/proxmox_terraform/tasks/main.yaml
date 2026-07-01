@@ -1,0 +1,61 @@
+---
+- name: List users
+  ansible.builtin.command: pveum user list
+  register: pveum_users
+  changed_when: false
+
+- name: Create Terraform user
+  ansible.builtin.command: >
+    pveum user add {{ pve_terraform_username }}
+  when: pve_terraform_username not in pveum_users.stdout
+
+- name: List roles
+  ansible.builtin.command: pveum role list
+  register: pveum_roles
+  changed_when: false
+
+- name: Create Terraform role
+  ansible.builtin.command: >
+    pveum role add {{ pve_terraform_role_name }} -privs "Datastore.AllocateSpace Datastore.Audit Pool.Allocate Sys.Audit Sys.Console Sys.Modify VM.Allocate VM.Audit VM.Clone VM.Config.CDROM VM.Config.Cloudinit VM.Config.CPU VM.Config.Disk VM.Config.HWType VM.Config.Memory VM.Config.Network VM.Config.Options VM.Migrate VM.PowerMgmt SDN.Use"
+  when: pve_terraform_role_name not in pveum_roles.stdout
+
+- name: List ACLs
+  ansible.builtin.command: pveum acl list --output-format json
+  register: pveum_acls
+  changed_when: false
+
+- name: Assign Terraform role to Terraform user
+  ansible.builtin.command: >
+    pveum acl modify / -roles {{ pve_terraform_role_name }} -users {{ pve_terraform_username }}
+  when: pve_terraform_username not in (pveum_acls.stdout | default('[]') | from_json | selectattr('roleid', 'equalto', pve_terraform_role_name) | map(attribute='ugid') | list)
+
+- name: Check if terraform token exists for user
+  ansible.builtin.command: >
+    pveum user token list {{ pve_terraform_username }}
+  register: pveum_tokens
+  changed_when: false
+
+- name: Create Proxmox API token via CLI
+  ansible.builtin.command: >
+    pveum user token add {{ pve_terraform_username }} {{ pve_tf_token_name }} --privsep 1 --output-format json
+  register: token_creation_result
+  when: pve_tf_token_name not in pveum_tokens.stdout
+
+- name: Template token into Terraform auto.tfvars
+  ansible.builtin.copy:
+    dest: "../terraform/secrets.auto.tfvars"
+    mode: '0600'
+    content: |
+      proxmox_api_token = "{{ pve_terraform_username }}!{{ pve_tf_token_name }}={{ (token_creation_result.stdout | from_json).value }}"
+      proxmox_api_url = "https://{{ inventory_hostname }}:8006/"
+  delegate_to: localhost
+  when: token_creation_result.changed
+
+- name: Check if snippets storage exists
+  ansible.builtin.command: "grep -A 5 'dir: {{ pve_snippet_storage }}' /etc/pve/storage.cfg"
+  register: storage_config
+  changed_when: false
+
+- name: Enable snippet storage for cloud-init files
+  ansible.builtin.command: "pvesm set {{ pve_snippet_storage }} --content {{ pve_snippet_storage_content }}"
+  when: "'snippets' not in storage_config.stdout"

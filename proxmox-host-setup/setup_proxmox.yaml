@@ -1,7 +1,8 @@
 ---
-- name: Proxmox Base Configuration & Networking Setup
+- name: Configure Proxmox no-subscription repos, custom networking, and prepare for Terraform
   hosts: proxmox
-  gather_facts: yes
+  gather_facts: true
   roles:
     - proxmox_repos
     - proxmox_custom_net
+    - proxmox_terraform

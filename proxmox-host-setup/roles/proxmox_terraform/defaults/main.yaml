@@ -1,0 +1,6 @@
+pve_terraform_username: "tf@pve"
+pve_terraform_role_name: "TerraformRole"
+pve_tf_token_name: "tf-token"
+
+pve_snippet_storage: "local"
+pve_snippet_storage_content: "iso,vztmpl,backup,import,snippets"
