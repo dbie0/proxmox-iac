@@ -15,6 +15,7 @@
     src: dnsmasq.conf.j2
     dest: /etc/dnsmasq.conf
     mode: '0644'
+    validate: 'dnsmasq --test -C %s'
 
 - name: Create custom nftables directory
   ansible.builtin.file:
@@ -47,6 +48,7 @@
     content: |
       [OPTIONS]
       enable: 1
+    mode: '0640'
   notify: Restart pve-firewall
 - name: Configure proxmox firewall
   ansible.builtin.copy:
@@ -55,9 +57,10 @@
       [OPTIONS]
       enable: 1
       nftables: 1
-      
+
       [RULES]
-      IN ACCEPT -p udp -dport 53 -log nolog                 # allow dnsmasq to resolve incoming DNS queries 
+      IN ACCEPT -p udp -dport 53 -log nolog                 # allow dnsmasq to resolve incoming DNS queries
       OUT ACCEPT -i br_trs_sep -p udp -sport 67 -log nolog  # allow dnsmasq to accept incoming DHCP requests
       IN ACCEPT -i br_trs_sep -p udp -dport 67 -log nolog   # allow dnsmasq to respond to incoming DHCP requests
+    mode: '0640'
   notify: Restart pve-firewall

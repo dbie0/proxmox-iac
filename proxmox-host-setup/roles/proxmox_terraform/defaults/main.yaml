@@ -1,6 +1,28 @@
-pve_terraform_username: "tf@pve"
-pve_terraform_role_name: "TerraformRole"
-pve_tf_token_name: "tf-token"
+proxmox_terraform_username: "tf@pve"
+proxmox_terraform_role_name: "TerraformRole"
+proxmox_terraform_token_name: "tf-token"
 
-pve_snippet_storage: "local"
-pve_snippet_storage_content: "iso,vztmpl,backup,import,snippets"
+proxmox_terraform_snippet_storage: "local"
+proxmox_terraform_snippet_storage_content: "iso,vztmpl,backup,import,snippets"
+
+proxmox_terraform_privs:
+  - Datastore.AllocateSpace
+  - Datastore.Audit
+  - Pool.Allocate
+  - Sys.Audit
+  - Sys.Console
+  - Sys.Modify
+  - VM.Allocate
+  - VM.Audit
+  - VM.Clone
+  - VM.Config.CDROM
+  - VM.Config.Cloudinit
+  - VM.Config.CPU
+  - VM.Config.Disk
+  - VM.Config.HWType
+  - VM.Config.Memory
+  - VM.Config.Network
+  - VM.Config.Options
+  - VM.Migrate
+  - VM.PowerMgmt
+  - SDN.Use
